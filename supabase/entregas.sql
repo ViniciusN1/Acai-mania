@@ -1,4 +1,4 @@
--- Açaí Mania: motoboy confirma as etapas da entrega pelo link do WhatsApp
+-- Delivery de açaí (white-label): motoboy confirma as etapas da entrega pelo link do WhatsApp
 -- Rode no SQL Editor do Supabase (depois de schema.sql e roles.sql).
 
 -- Etapas extras registradas em status_times: 'coletado' (motoboy pegou) e 'entregue'

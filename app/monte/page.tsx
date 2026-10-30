@@ -3,9 +3,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { brl, groups, sizes } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
+import { store } from "@/lib/store";
 
 export default function Monte() {
-  const [size, setSize] = useState(sizes[2]);
+  const [size, setSize] = useState(sizes[sizes.length - 1]);
   const [sel, setSel] = useState<Record<string, string[]>>({});
   const [qty, setQty] = useState(1);
   const { add } = useCart();
@@ -34,7 +35,7 @@ export default function Monte() {
       ))}
       <div className="bar"><div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <button className="plus" onClick={() => setQty(Math.max(1, qty - 1))}>−</button><b>{qty}</b><button className="plus" onClick={() => setQty(qty + 1)}>+</button>
-        <button className="btn" style={{ flex: 1 }} onClick={() => { add({ name: `Monte seu Açaí ${size.label}`, details, unitPrice: size.price, image: "/copo.jpg" }, qty); router.push("/carrinho"); }}>Adicionar · {brl(size.price * qty)}</button>
+        <button className="btn" style={{ flex: 1 }} onClick={() => { add({ name: `Monte seu Açaí ${size.label}`, details, unitPrice: size.price, image: store.heroImage }, qty); router.push("/carrinho"); }}>Adicionar · {brl(size.price * qty)}</button>
       </div></div>
     </main>
   );

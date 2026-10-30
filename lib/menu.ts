@@ -1,20 +1,20 @@
+import { store } from "./store";
+
 export type Product = { id: string; name: string; description: string; price: number; image: string; category: string; build?: boolean; available?: boolean };
 
+/** Categorias padrão (usadas só se nenhum produto tiver categoria). As abas reais vêm dos produtos cadastrados. */
 export const categories = ["Açaí no copo", "Marmitas", "Combos", "Bebidas"];
 
+/** Categorias na ordem em que aparecem no cardápio */
+export const categoriesOf = (products: Product[]) => {
+  const list = [...new Set(products.map((p) => p.category).filter(Boolean))];
+  return list.length ? list : categories;
+};
 
-export const sizes = [
-  { id: "330", label: "330ml", price: 10 },
-  { id: "440", label: "440ml", price: 13 },
-  { id: "550", label: "550ml", price: 16 },
-];
 
-export const groups = [
-  { id: "frutas", label: "Frutas", max: 3, options: ["Banana", "Morango", "Kiwi", "Uva"] },
-  { id: "coberturas", label: "Coberturas", max: 2, options: ["Leite condensado", "Calda de chocolate", "Mel", "Calda de morango"] },
-  { id: "complementos", label: "Complementos", max: 4, options: ["Granola", "Leite em pó", "Paçoca", "Confete"] },
-];
-
+// Tamanhos e acompanhamentos do "Monte seu açaí" vêm da configuração da loja (lib/store.ts)
+export const sizes = store.sizes;
+export const groups = store.groups;
 
 export const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -29,5 +29,6 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchZones(): Promise<Record<string, number>> {
   const { data, error } = await supabase.from("delivery_zones").select("*").order("fee");
   if (error) throw error;
-  return Object.fromEntries((data ?? []).map((z) => [z.neighborhood, Number(z.fee)]));
+  const zones = Object.fromEntries((data ?? []).map((z) => [z.neighborhood, Number(z.fee)]));
+  return Object.keys(zones).length ? zones : store.deliveryZonesFallback;
 }

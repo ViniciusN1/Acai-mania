@@ -1,4 +1,4 @@
--- Açaí Mania: papéis (admin só pelo Supabase, clientes se cadastram no site)
+-- Delivery de açaí (white-label): papéis (admin só pelo Supabase, clientes se cadastram no site)
 -- Rode este arquivo inteiro no SQL Editor do Supabase.
 
 -- 1) Perfis
@@ -69,6 +69,8 @@ create policy "orders_insert_user" on public.orders for insert to authenticated
   with check (status = 'recebido' and (user_id is null or user_id = auth.uid()));
 create policy "orders_own_read" on public.orders for select to authenticated using (user_id = auth.uid());
 
--- 4) Torne-se admin (troque o e-mail se precisar). Só dá pra fazer por aqui.
+-- 4) Promova o dono da loja a admin. Só dá pra fazer por aqui.
+--    Antes: o dono cria a conta em /registrar (ou crie em Authentication > Users).
+--    Troque o e-mail abaixo pelo e-mail do dono da loja e rode de novo só esta linha se precisar.
 update public.profiles set role = 'admin'
-where id = (select id from auth.users where email = 'nunes6479@gmail.com');
+where id = (select id from auth.users where email = 'EMAIL_DO_DONO@exemplo.com');

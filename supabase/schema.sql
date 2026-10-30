@@ -1,4 +1,4 @@
--- Açaí Mania: pedidos
+-- Delivery de açaí (white-label): pedidos
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   code text not null default upper(substr(md5(random()::text),1,4)),
@@ -111,7 +111,8 @@ end $$;
 drop trigger if exists orders_coupon_use on public.orders;
 create trigger orders_coupon_use after insert on public.orders for each row execute function public.count_coupon_use();
 
--- Dados iniciais
+-- Dados iniciais de EXEMPLO (cardápio, bairros de Aquidauana e cupons). Para um cliente novo,
+-- edite ou apague tudo depois pelo /admin (abas Cardápio, Frete e Cupons).
 insert into public.products (name, description, price, image, category, build, sort) values
  ('Monte seu Açaí','330, 440 ou 550 ml com frutas, coberturas e complementos.',10,'/copo.jpg','Açaí no copo',true,1),
  ('Açaí na Marmita','Marmita de 1 litro, perfeita para dividir.',44.90,'/marmita.jpg','Marmitas',false,2),

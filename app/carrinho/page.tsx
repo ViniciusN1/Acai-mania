@@ -6,6 +6,7 @@ import { brl, fetchZones } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { store } from "@/lib/store";
 
 type Coupon = { code: string; kind: string; value: number } | null;
 
@@ -41,7 +42,8 @@ export default function Carrinho() {
     setMsg({ ok: true, text: r.message });
   }
 
-  const valid = items.length > 0 && f.name.trim() && phone.length >= 10 && (mode === "retirada" || (f.neighborhood && f.address.trim()));
+  const belowMin = mode === "entrega" && store.minOrder > 0 && subtotal < store.minOrder;
+  const valid = items.length > 0 && !belowMin && f.name.trim() && phone.length >= 10 && (mode === "retirada" || (f.neighborhood && f.address.trim()));
 
   async function finish() {
     if (!valid) return;
@@ -83,13 +85,14 @@ export default function Carrinho() {
         {msg && <div className={msg.ok ? "okmsg" : "err"}>{msg.text}</div>}</div>
       <h3>Pagamento</h3>
       <div className="grid3">{([["pix", "Pix"], ["cartao", "Cartão"], ["dinheiro", "Dinheiro"]] as const).map(([k, l]) => <button key={k} className={`opt ${payment === k ? "on" : ""}`} onClick={() => setPayment(k)}>{l}</button>)}</div>
-      <p className="mut">{payment === "pix" ? "A chave Pix é enviada no acompanhamento do pedido." : "Pago na entrega."}</p>
+      <p className="mut">{payment === "pix" ? (store.pixKey ? "A chave Pix aparece no acompanhamento do pedido." : "A loja envia a chave Pix pelo WhatsApp.") : "Pago na entrega."}</p>
       <div className="card">
         <div className="row"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
         <div className="row"><span>Frete</span><span>{mode === "retirada" ? "Retirada" : brl(fee)}</span></div>
         {discount > 0 && <div className="row okmsg"><span>Desconto</span><span>−{brl(discount)}</span></div>}
         <div className="row total"><span>Total</span><span className="price">{brl(total)}</span></div>
       </div>
+      {belowMin && <p className="err">Pedido mínimo para entrega: {brl(store.minOrder)}.</p>}
       <div className="bar"><button className="btn full" disabled={!valid || sending} onClick={finish}>{sending ? "Enviando..." : `Finalizar pedido · ${brl(total)}`}</button></div>
     </main>
   );

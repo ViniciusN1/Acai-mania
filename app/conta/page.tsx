@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { brl } from "@/lib/menu";
+import { orderCode } from "@/lib/store";
 
 type Order = { id: string; code: string; created_at: string; status: string; total: number };
 const label: Record<string, string> = { recebido: "Recebido", preparo: "Em preparo", saiu: "Saiu para entrega", entregue: "Entregue", cancelado: "Cancelado" };
@@ -30,7 +31,7 @@ export default function Conta() {
       {orders.length === 0 && <p className="mut">Você ainda não fez pedidos logado.</p>}
       {orders.map((o) => (
         <Link key={o.id} href={`/pedido/${o.id}`} className="card" style={{ display: "flex", justifyContent: "space-between", color: "inherit", textDecoration: "none" }}>
-          <div><b>#AM-{o.code}</b><div className="mut">{new Date(o.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</div></div>
+          <div><b>{orderCode(o.code)}</b><div className="mut">{new Date(o.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</div></div>
           <div style={{ textAlign: "right" }}>{brl(Number(o.total))}<div className="mut">{label[o.status]}</div></div>
         </Link>))}
     </main>

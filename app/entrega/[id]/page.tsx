@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { brl } from "@/lib/menu";
 import { supabase } from "@/lib/supabase";
+import { orderCode, mapsAddress, waLink } from "@/lib/store";
 
 type Order = { id: string; code: string; status: string; status_times: Record<string, string>; total: number; payment: string;
   customer_name: string; customer_phone: string; address: string; neighborhood: string; items: { name: string; qty: number; details?: string }[] };
@@ -26,12 +27,12 @@ export default function Entrega() {
   }
 
   if (!o) return <main className="wrap"><p className="mut">Carregando entrega...</p></main>;
-  const map = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${o.address}, ${o.neighborhood}, Aquidauana - MS`)}`;
+  const map = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapsAddress(o.address, o.neighborhood))}`;
   const pago = o.payment === "pix";
   const coletado = !!o.status_times?.coletado;
   return (
     <main className="wrap">
-      <h1>Entrega #AM-{o.code}</h1>
+      <h1>Entrega {orderCode(o.code)}</h1>
       <section className="hero" style={{ display: "block" }}>
         <h2>{o.status === "entregue" ? "Entregue ✓" : o.status === "cancelado" ? "Cancelado" : o.status === "saiu" ? (coletado ? "A caminho do cliente" : "Pronto para coletar") : "Ainda na loja"}</h2>
         <div style={{ color: "#fff", fontWeight: 700 }}>{pago ? "JÁ PAGO (Pix) · não cobrar" : `COBRAR ${brl(Number(o.total))} · ${o.payment}`}</div>
@@ -39,7 +40,7 @@ export default function Entrega() {
       <div className="card"><b>{o.customer_name}</b><div>{o.address}</div><div className="mut">{o.neighborhood}</div><br />
         <a className="btn" href={map} target="_blank">Abrir rota</a>{" "}
         <a className="chip" href={`tel:${o.customer_phone}`}>Ligar</a>{" "}
-        <a className="chip" href={`https://wa.me/55${o.customer_phone}`} target="_blank">WhatsApp</a></div>
+        <a className="chip" href={waLink(o.customer_phone)} target="_blank">WhatsApp</a></div>
       <div className="card">{o.items.map((i, n) => <div key={n}>{i.qty}x {i.name}{i.details && <div className="mut">{i.details}</div>}</div>)}</div>
       <div className="card">
         <div className="step"><span className={`dot ${o.status_times?.saiu ? "done" : ""}`} /><span style={{ flex: 1 }}>Despachado pela loja</span><span className="mut">{hhmm(o.status_times?.saiu)}</span></div>
