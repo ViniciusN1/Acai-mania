@@ -25,7 +25,7 @@ export default function Pedido() {
       <div className="card">{steps.filter(([k]) => o.mode === "entrega" || k !== "saiu").map(([k, l], i) => (
         <div key={k} className="step"><span className={`dot ${i < idx ? "done" : i === idx ? "now" : ""}`} /><span style={{ flex: 1 }}>{l}</span><span className="mut">{hhmm(o.status_times?.[k])}</span></div>))}</div>
       <div className="card">{o.items.map((i, n) => <div key={n} className="row"><span>{i.qty}x {i.name}</span></div>)}<div className="row total"><span>Total</span><span className="price">{brl(Number(o.total))}</span></div><div className="mut">Pagamento: {o.payment}</div></div>
-      <a className="btn full wa" style={{ display: "block", textAlign: "center" }} href={`https://wa.me/55${wa}?text=${text}`} target="_blank">Falar no WhatsApp</a>
+      <a className="btn full wa" style={{ display: "block", textAlign: "center" }} href={`https://wa.me/${wa}?text=${text}`} target="_blank">Falar no WhatsApp</a>
     </main>
   );
 }

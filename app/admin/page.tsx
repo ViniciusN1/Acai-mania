@@ -14,7 +14,7 @@ export default function Admin() {
   if (!session) return <Login />;
   if (loading) return null;
   if (profile?.role !== "admin") return (
-    <main className="wrap"><h1>Acesso restrito</h1><p className="mut">Esta área é só para a equipe da loja.</p>
+    <main className="wrap"><h1>Acesso restrito</h1><p className="mut">Esta área é só para a equipe da loja. Você entrou como {session.user.email}.</p>
       <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button> <a className="chip" href="/">Voltar ao cardápio</a></main>
   );
   return (
@@ -111,8 +111,8 @@ function Orders() {
     const sel = orders.filter((o) => picked.includes(o.id)).sort((a, b) => String(a.neighborhood).localeCompare(String(b.neighborhood)));
     if (!sel.length) return alert("Selecione os pedidos");
     const map = (o: Row) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${o.address}, ${o.neighborhood}, Aquidauana - MS`)}`;
-    const lines = sel.map((o, i) => `${i + 1}. #AM-${o.code} · ${o.customer_name} · ${o.neighborhood}\n   ${o.address}\n   ${o.payment === "pix" ? "PAGO (Pix)" : `COBRAR ${brl(Number(o.total))} (${o.payment})`} · Tel ${o.customer_phone}\n   ${map(o)}`);
-    const text = `Olá ${c.name}! Entregas:\n\n${lines.join("\n\n")}`;
+    const lines = sel.map((o, i) => `${i + 1}. #AM-${o.code} · ${o.customer_name} · ${o.neighborhood}\n   ${o.address}\n   ${o.payment === "pix" ? "PAGO (Pix)" : `COBRAR ${brl(Number(o.total))} (${o.payment})`} · Tel ${o.customer_phone}\n   ${map(o)}\n   Confirmar: ${location.origin}/entrega/${o.id}`);
+    const text = `Olá ${c.name}! Entregas (abra o link de cada uma e toque em "Peguei o pedido" e depois "Confirmar entrega"):\n\n${lines.join("\n\n")}`;
     window.open(`https://wa.me/55${String(c.phone).replace(/\D/g, "").replace(/^55/, "")}?text=${encodeURIComponent(text)}`, "_blank");
     const now = new Date().toISOString();
     for (const o of sel) await supabase.from("orders").update({ status: "saiu", courier_id: c.id, status_times: { ...o.status_times, saiu: now } }).eq("id", o.id);
@@ -135,9 +135,10 @@ function Orders() {
             <td>{o.customer_name}<div className="mut">{o.customer_phone}</div><div className="mut">{o.mode === "entrega" ? `${o.neighborhood} · ${o.address}` : "Retirada"}</div></td>
             <td>{(o.items as Row[]).map((i, n) => <div key={n}>{i.qty}x {i.name}<div className="mut">{i.details}</div></div>)}</td>
             <td>{brl(Number(o.total))}<div className="mut">{o.payment}{o.coupon_code ? ` · ${o.coupon_code}` : ""}</div></td>
-            <td><span className="tag">{label[o.status]}</span></td>
+            <td><span className="tag">{label[o.status]}</span>{o.status === "saiu" && <div className="mut">{o.status_times?.coletado ? `Coletado ${new Date(o.status_times.coletado).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "Aguardando coleta"}</div>}</td>
             <td style={{ whiteSpace: "nowrap" }}>
-              {flow.indexOf(o.status) < 3 && <button className="btn" onClick={() => setStatus(o, flow[flow.indexOf(o.status) + 1] === "saiu" && o.mode === "retirada" ? "entregue" : flow[flow.indexOf(o.status) + 1])}>Avançar</button>}{" "}
+              {flow.indexOf(o.status) < 3 && (() => { const nx = flow[flow.indexOf(o.status) + 1] === "saiu" && o.mode === "retirada" ? "entregue" : flow[flow.indexOf(o.status) + 1];
+                return <button className="btn" onClick={() => confirm(`Pedido #AM-${o.code}: mudar para "${label[nx]}"?`) && setStatus(o, nx)}>{label[nx]}</button>; })()}{" "}
               <a className="chip" href={`https://wa.me/55${o.customer_phone}`} target="_blank">Cliente</a>{" "}
               <button className="chip" onClick={() => confirm("Cancelar pedido?") && setStatus(o, "cancelado")}>Cancelar</button>
             </td>
