@@ -16,7 +16,7 @@ export default function Pedido() {
 
   if (!o) return <main className="wrap"><p className="mut">Carregando pedido...</p></main>;
   const idx = steps.findIndex(([k]) => k === o.status);
-  const wa = process.env.NEXT_PUBLIC_WHATSAPP_LOJA ?? "";
+  const wa = process.env.NEXT_PUBLIC_WHATSAPP_LOJA || "5567993452339";
   const text = encodeURIComponent(`Olá! Sobre meu pedido #AM-${o.code}`);
   return (
     <main className="wrap">
