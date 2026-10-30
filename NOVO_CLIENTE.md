@@ -4,6 +4,16 @@ Cada loja tem **o seu próprio projeto Supabase** (banco, logins e pedidos separ
 
 > O banco que já vem no código (`lib/supabase.ts`) é **só da demonstração Açaí Mania**. Se você esquecer as variáveis do Supabase, os pedidos do cliente cairiam na demo. Sempre configure o passo 4.
 
+## Custos de infraestrutura (leia antes de vender)
+
+Conferido em 30/10/2026; confira de novo antes de fechar preço:
+
+- **Vercel Hobby (grátis) é só para uso pessoal, não comercial.** Site de cliente pago exige o plano **Pro** (ou Enterprise). Fonte: <https://vercel.com/docs/limits/fair-use-guidelines> (seção *Commercial usage*). Um time Pro pode hospedar vários projetos (um por loja).
+- **Supabase Free:** no máximo **2 projetos ativos**, e projetos ficam **pausados após 1 semana sem uso**. Para clientes pagos, use o **Pro: US$ 25/mês com o 1º projeto incluso e projetos extras a partir de US$ 10/mês** cada (instância Micro). Fonte: <https://supabase.com/pricing>.
+- Domínio `.com.br`: registro anual no Registro.br, de preferência no nome (CPF/CNPJ) da loja.
+
+Inclua esses custos na mensalidade.
+
 ## Antes de começar (pedir ao dono da loja)
 
 - [ ] Nome da loja, slogan (opcional) e horário de funcionamento
