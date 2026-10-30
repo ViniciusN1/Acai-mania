@@ -2,20 +2,21 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { brl } from "@/lib/menu";
+import { useAuth } from "@/lib/auth";
 
 type Tab = "pedidos" | "cardapio" | "cupons" | "motoboys" | "frete";
 const tabs: [Tab, string][] = [["pedidos", "Pedidos"], ["cardapio", "Cardápio"], ["cupons", "Cupons"], ["motoboys", "Motoboys"], ["frete", "Frete"]];
 
 export default function Admin() {
-  const [logged, setLogged] = useState<boolean | null>(null);
+  const { session, profile, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("pedidos");
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setLogged(!!data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setLogged(!!s));
-    return () => data.subscription.unsubscribe();
-  }, []);
-  if (logged === null) return null;
-  if (!logged) return <Login />;
+  if (session === undefined) return null;
+  if (!session) return <Login />;
+  if (loading) return null;
+  if (profile?.role !== "admin") return (
+    <main className="wrap"><h1>Acesso restrito</h1><p className="mut">Esta área é só para a equipe da loja.</p>
+      <button className="btn" onClick={() => supabase.auth.signOut()}>Sair</button> <a className="chip" href="/">Voltar ao cardápio</a></main>
+  );
   return (
     <main className="admin">
       <div className="top"><h1>Açaí Mania · Admin</h1><button className="chip" onClick={() => supabase.auth.signOut()}>Sair</button></div>

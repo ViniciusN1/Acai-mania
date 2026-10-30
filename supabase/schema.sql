@@ -121,4 +121,4 @@ on conflict do nothing;
 insert into public.delivery_zones values ('Centro',4),('Alto',5),('Serraria',5),('Vila Pinheiro',6),('Guanandy',6),('Outro',8) on conflict do nothing;
 insert into public.coupons (code, kind, value, min_order) values ('PRIMEIRO10','percent',10,20),('FRETEGRATIS','free_delivery',0,40) on conflict do nothing;
 
--- Depois: crie o usuário da loja em Authentication > Users (e-mail e senha) para entrar no /admin.
+-- Depois rode supabase/roles.sql (papéis cliente/admin). Admin só se define pelo SQL: update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'EMAIL');

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { brl, fetchZones } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 
 type Coupon = { code: string; kind: string; value: number } | null;
 
@@ -19,7 +20,10 @@ export default function Carrinho() {
   const [coupon, setCoupon] = useState<Coupon>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [sending, setSending] = useState(false);
+  const { session, profile } = useAuth();
   useEffect(() => { fetchZones().then(setZones).catch(console.error); }, []);
+  // Cliente logado: preenche nome e telefone do cadastro
+  useEffect(() => { if (profile) setF((x) => ({ ...x, name: x.name || profile.full_name, phone: x.phone || profile.phone })); }, [profile]);
 
   const baseFee = mode === "entrega" ? zones[f.neighborhood] ?? 0 : 0;
   const discount = !coupon ? 0 : coupon.kind === "percent" ? subtotal * (coupon.value / 100) : coupon.kind === "fixed" ? Math.min(coupon.value, subtotal) : 0;
@@ -44,7 +48,7 @@ export default function Carrinho() {
     setSending(true);
     const id = crypto.randomUUID();
     const { error } = await supabase.from("orders").insert({
-      id, mode, customer_name: f.name.trim(), customer_phone: phone,
+      id, user_id: session?.user.id ?? null, mode, customer_name: f.name.trim(), customer_phone: phone,
       neighborhood: mode === "entrega" ? f.neighborhood : null, address: mode === "entrega" ? f.address.trim() : null,
       items: items.map(({ name, details, unitPrice, qty }) => ({ name, details, unitPrice, qty })),
       subtotal, delivery_fee: fee, discount: Number(discount.toFixed(2)), total: Number(total.toFixed(2)), payment,
