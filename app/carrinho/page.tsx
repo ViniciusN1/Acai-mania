@@ -6,6 +6,10 @@ import { brl, fetchZones } from "@/lib/menu";
 import { useCart } from "@/lib/cart";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import dynamic from "next/dynamic";
+import { currentPosition, geocode, reverseGeocode, LatLng } from "@/lib/geo";
+
+const LiveMap = dynamic(() => import("@/components/LiveMap"), { ssr: false, loading: () => <div className="map" style={{ height: 200 }} /> });
 
 type Coupon = { code: string; kind: string; value: number } | null;
 
@@ -20,6 +24,9 @@ export default function Carrinho() {
   const [coupon, setCoupon] = useState<Coupon>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [sending, setSending] = useState(false);
+  const [geo, setGeo] = useState<(LatLng & { source: "gps" | "endereco" | "mapa" }) | null>(null);
+  const [geoMsg, setGeoMsg] = useState("");
+  const [locating, setLocating] = useState(false);
   const { session, profile } = useAuth();
   useEffect(() => { fetchZones().then(setZones).catch(console.error); }, []);
   // Cliente logado: preenche nome e telefone do cadastro
@@ -43,17 +50,55 @@ export default function Carrinho() {
 
   const valid = items.length > 0 && f.name.trim() && phone.length >= 10 && (mode === "retirada" || (f.neighborhood && f.address.trim()));
 
+  /** Tenta casar o bairro do mapa com um bairro da lista de frete */
+  const matchZone = (n: string) => {
+    const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    return Object.keys(zones).find((z) => norm(z) === norm(n)) || "";
+  };
+
+  async function useMyLocation() {
+    setLocating(true); setGeoMsg("Procurando sua localização...");
+    try {
+      const pos = await currentPosition();
+      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setGeo({ ...p, source: "gps" });
+      setGeoMsg(pos.coords.accuracy > 80 ? `Localização aproximada (±${Math.round(pos.coords.accuracy)} m). Arraste o pino até sua casa.` : "Localização encontrada. Confira o endereço e o número.");
+      const r = await reverseGeocode(p).catch(() => null);
+      if (r) setF((x) => ({ ...x, address: x.address.trim() ? x.address : r.address, neighborhood: x.neighborhood || matchZone(r.neighborhood) }));
+    } catch (e) { setGeoMsg((e as Error).message); }
+    setLocating(false);
+  }
+
+  async function findAddress() {
+    if (f.address.trim().length < 4) return setGeoMsg("Digite rua e número para achar no mapa.");
+    setLocating(true); setGeoMsg("Procurando o endereço no mapa...");
+    const p = await geocode([f.address, f.neighborhood].filter(Boolean).join(", ")).catch(() => null);
+    setLocating(false);
+    if (!p) return setGeoMsg("Não achamos no mapa. Sem problema: o endereço digitado vale. Se quiser, use sua localização.");
+    setGeo({ ...p, source: "endereco" });
+    setGeoMsg("Achamos! Arraste o pino se não for exatamente aí.");
+  }
+
   async function finish() {
     if (!valid) return;
     setSending(true);
+    // Sem GPS: tenta achar o endereço digitado no mapa (não bloqueia o pedido se falhar)
+    let g = geo;
+    if (mode === "entrega" && !g) {
+      const p = await geocode([f.address, f.neighborhood].filter(Boolean).join(", ")).catch(() => null);
+      if (p) { g = { ...p, source: "endereco" }; setGeo(g); }
+    }
     const id = crypto.randomUUID();
-    const { error } = await supabase.from("orders").insert({
+    const base: Record<string, unknown> = {
       id, user_id: session?.user.id ?? null, mode, customer_name: f.name.trim(), customer_phone: phone,
       neighborhood: mode === "entrega" ? f.neighborhood : null, address: mode === "entrega" ? f.address.trim() : null,
       items: items.map(({ name, details, unitPrice, qty }) => ({ name, details, unitPrice, qty })),
       subtotal, delivery_fee: fee, discount: Number(discount.toFixed(2)), total: Number(total.toFixed(2)), payment,
       coupon_code: coupon?.code ?? null, status_times: { recebido: new Date().toISOString() },
-    });
+    };
+    let { error } = await supabase.from("orders").insert(mode === "entrega" && g ? { ...base, lat: g.lat, lng: g.lng, geo_source: g.source } : base);
+    // Banco ainda sem as colunas de localização (04_localizacao.sql não rodado): envia sem coordenadas
+    if (error && g && /lat|lng|geo_source|column/i.test(error.message)) ({ error } = await supabase.from("orders").insert(base));
     setSending(false);
     if (error) return setMsg({ ok: false, text: "Não foi possível enviar o pedido. Tente de novo." });
     clear();
@@ -76,7 +121,16 @@ export default function Carrinho() {
         <label>Telefone (WhatsApp)</label><input inputMode="tel" placeholder="(67) 99999-0000" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
         {mode === "entrega" && <>
           <label>Bairro</label><select value={f.neighborhood} onChange={(e) => setF({ ...f, neighborhood: e.target.value })}><option value="">Selecione</option>{Object.entries(zones).map(([n, v]) => <option key={n} value={n}>{n} · {brl(v)}</option>)}</select>
-          <label>Rua, número e referência</label><input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />
+          <label>Endereço (rua, número e referência)</label>
+          <div className="addr"><input value={f.address} placeholder="Ex.: Rua Cândido Mariano, 500, casa azul" autoComplete="street-address"
+            onChange={(e) => setF({ ...f, address: e.target.value })} onBlur={() => { if (!geo && f.address.trim().length > 6) findAddress(); }} />
+            <button className="chip" type="button" onClick={findAddress} disabled={locating} aria-label="Achar endereço no mapa">🔎</button></div>
+          <button className="btn soft gpsbtn" type="button" onClick={useMyLocation} disabled={locating}>📍 {locating ? "Localizando..." : "Usar minha localização"}</button>
+          {geoMsg && <div className="hint">{geoMsg}</div>}
+          {geo && <div style={{ marginTop: 10 }}>
+            <LiveMap height={200} fitKey={`${geo.source}`} pins={[{ id: "cliente", kind: "cliente", lat: geo.lat, lng: geo.lng, draggable: true, label: "Entregar aqui",
+              onDragEnd: (p) => { setGeo({ ...p, source: "mapa" }); setGeoMsg("Pino ajustado. Vamos entregar neste ponto."); } }]} />
+            <div className="hint">Arraste o pino 🏠 até o local exato da entrega.</div></div>}
         </>}
       </div>
       <div className="card"><div style={{ display: "flex", gap: 8 }}><input placeholder="Cupom de desconto" value={code} onChange={(e) => setCode(e.target.value)} /><button className="btn ghost" onClick={applyCoupon}>Aplicar</button></div>
