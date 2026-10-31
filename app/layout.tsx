@@ -1,3 +1,4 @@
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/lib/cart";
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: store.shortName, statusBarStyle: "default" },
   icons: { icon: store.logo, apple: store.logo },
 };
-export const viewport: Viewport = { themeColor: store.colors.primary };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: store.colors.primary };
 
 // Cores da loja (lib/store.ts) aplicadas por cima das cores padrão do globals.css
 const theme = { "--roxo": store.colors.primary, "--mag": store.colors.accent, "--bg": store.colors.background } as React.CSSProperties;

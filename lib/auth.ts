@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-export type Profile = { id: string; full_name: string; phone: string; role: "cliente" | "admin" };
+export type Profile = { id: string; full_name: string; phone: string; role: "cliente" | "admin" | "motoboy" };
 
 /** Sessão + perfil do usuário logado. undefined = carregando. */
 export function useAuth() {

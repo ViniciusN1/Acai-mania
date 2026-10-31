@@ -136,3 +136,12 @@ Tamanhos e acompanhamentos do "Monte seu açaí" ficam nas variáveis `NEXT_PUBL
 ## Atualizações de código
 
 Todas as lojas usam o mesmo repositório. Um `git push` na branch de produção redeploya todas as lojas ligadas a ela. Se alguma mudança precisar de SQL novo, rode o script no Supabase **de cada cliente**.
+
+
+## Mapa, GPS e app do motoboy (opcional)
+
+1. No SQL Editor do projeto Supabase do cliente, depois de `schema.sql`, `roles.sql` e `entregas.sql`, rode **na ordem**: `supabase/04_localizacao.sql`, `supabase/05_motoboys.sql`, `supabase/06_ranking_bonus.sql`.
+2. No `/admin › Ranking e bônus`, ajuste a posição da loja no mapa e o bônus por entrega.
+3. App do motoboy: novo projeto na Vercel com o mesmo repositório, **Root Directory = `motoboy-app`**, framework **Vite**, e as variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (do projeto do cliente), `VITE_SITE_URL` (site da loja), `VITE_ORDER_PREFIX` (mesmo prefixo do pedido) e `VITE_CITY`.
+4. Para a busca de endereço focar na cidade do cliente, defina no site `GEO_CITY` (ex.: `Campo Grande, MS, Brasil`) e `GEO_VIEWBOX` (caixa lng_min,lat_max,lng_max,lat_min da área urbana), além de `NOMINATIM_EMAIL`.
+5. Detalhes e como promover motoboy: veja o `README.md`.
